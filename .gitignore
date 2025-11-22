@@ -1,0 +1,14 @@
+.vscode/
+**/__pycache__
+*.egg-info
+
+# Environments
+.env
+.venv
+.idea
+env/
+venv/
+ENV/
+
+# Script file
+setupEnv.bat
