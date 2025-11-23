@@ -10,7 +10,7 @@ class Generator():
         self.borderWidth = None
         if not isinstance(seed, (None, int)):
             seed = 1234
-        rng = np.random.default_rng() if seed is None else np.random.default_rng(seed=seed)
+        self.rng = np.random.default_rng() if seed is None else np.random.default_rng(seed=seed)
         
     def createFramework(self, mapSize, borderWidth = 0):
         pass
