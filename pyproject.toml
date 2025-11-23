@@ -8,3 +8,6 @@ dependencies = [
     "numpy>=1.24.4",
     "opencv-python>=4.11.0.86",
 ]
+
+[project.scripts]
+optimal_path_ec = "optimal_path_ec.__main__:main"

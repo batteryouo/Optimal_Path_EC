@@ -1,2 +1,3 @@
-__version__ = "1.0.0"
-__author__ = "Battery"
+import core
+import map_generator
+import utils
