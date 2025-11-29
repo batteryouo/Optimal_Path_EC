@@ -1,14 +1,7 @@
-import logging
-
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from random import Random
-
-N_SKELETON_POINTS = 130
-MIN_DISTANCE = 500
-MAX_RANGE = 2000
-MIN_ANGLE_DEGREES = 40
 
 class Generator():
     def __init__(self, seed = None):
@@ -19,6 +12,8 @@ class Generator():
         if not isinstance(seed, int) or (seed is None):
             seed = 1234
         self.rng = np.random.default_rng() if seed is None else np.random.default_rng(seed=seed)
+
+        self.points = None
         
     def createFramework(self, frameSize = (1000, 1000), borderWidth:int = 10):
 
@@ -29,23 +24,47 @@ class Generator():
         self.borderWidth = borderWidth
         self.mapSize = (frameSize[0] - 2*borderWidth, frameSize[1] - 2*borderWidth)
         self.canvas = np.zeros(frameSize, dtype=np.uint8)
-        self.canvas[borderWidth:-1*borderWidth, borderWidth:-1*borderWidth] = 255
+        self.canvas = np.full(frameSize, 0, dtype=np.uint8)
+        self.canvas[borderWidth:frameSize[0]-1*borderWidth, borderWidth:frameSize[1]-1*borderWidth] = 255
     
-    def generate(self, n:int, min_dist:float, max_range:float=None, min_angle_degrees:float=10):
+    def generate(self, n:int, min_dist:float, max_range:float=None, min_angle_degrees:float=10, expand_width = 10):
+        max_range -= expand_width
         if max_range is None:
-            max_range = np.min(self.mapSize)
+            max_range = np.min(self.mapSize) - expand_width
         
+        if max_range < 0:
+            raise ValueError("max range is lower than expand_width")
+
         skeleton_points = self.generate_constrained_points(n, min_dist, max_range)
         ordered_skeleton = self.__connect_via_angular_sort(skeleton_points)
-        optimized_skeleton = self.optimize_path_skeleton(ordered_skeleton, MIN_ANGLE_DEGREES)
-        if(len(optimized_skeleton) >= 3):
-            return None
-            
-        return optimized_skeleton
-    
-    def plot(self):
-        pass
+        optimized_skeleton = self.optimize_path_skeleton(ordered_skeleton, min_angle_degrees)
+        if(len(optimized_skeleton) < 3):
+            return (None, self.canvas)
+        
+        centerOfFrame = (self.frameSize[0]/2, self.frameSize[1]/2)
+        optimized_skeleton += centerOfFrame
 
+        self.points = optimized_skeleton
+        self.canvas = self.draw_smooth_expand_track(self.points, expand_width)
+        
+        return optimized_skeleton, self.canvas
+    
+    def clear_canvas(self):
+        self.canvas = np.zeros(self.frameSize, dtype=np.uint8)
+        self.canvas = np.full(self.frameSize, 0, dtype=np.uint8)
+        self.canvas[self.borderWidth:self.frameSize[0]-1*self.borderWidth, self.borderWidth:self.frameSize[1]-1*self.borderWidth] = 255 
+
+    def draw_smooth_expand_track(self, pts, expand_width):
+
+        height, width = self.canvas.shape
+
+        img = np.zeros((height, width), dtype=np.uint8) + 255
+        center_line_pts = np.array(pts, np.int32)
+        center_line_pts = center_line_pts.reshape((-1, 1, 2))
+
+        cv2.polylines(img, [center_line_pts], isClosed=True, color=0, thickness=expand_width, lineType=cv2.LINE_AA)
+        img = img & self.canvas
+        return img
     def generate_constrained_points(self, n: int, min_dist: float, max_range: float = 200) -> np.ndarray:
         
         points = []
@@ -55,7 +74,7 @@ class Generator():
             if len(points) >= n:
                 break
 
-            candidate = np.random.rand(2) * max_range - (max_range / 2)
+            candidate = self.rng.random(2) * max_range - (max_range / 2)
             
             is_too_close = False
             for existing_point in points:
@@ -167,6 +186,8 @@ class Generator():
             if not optimized:
                 i = 0
         if len(current_skeleton) < num_pts:
-            logging.info("Only {len(current_skeleton)}/{num_pts} points met the distance constraint.")
+            print(f"Only {len(current_skeleton)}/{num_pts} points met the distance constraint.")
 
         return np.array(current_skeleton)
+
+
