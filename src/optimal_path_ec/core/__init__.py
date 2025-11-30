@@ -4,3 +4,5 @@ __email__ = "oyinggaio@gmail.com"
 __license__ = "MIT License"
 
 from .core import run
+import shape
+import func
