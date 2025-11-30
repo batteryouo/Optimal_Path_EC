@@ -4,10 +4,13 @@ import numpy as np
 from random import Random
 
 class Generator():
+    frameSize = (1000, 1000)
+    borderWidth = 10
+    mapSize = (980, 980)
+    canvas = None
+
     def __init__(self, seed = None):
-        self.frameSize = (1000, 1000)
-        self.borderWidth = 10
-        self.mapSize = (980, 980)
+        
         self.canvas = None
         if not isinstance(seed, int) or (seed is None):
             seed = 1234
@@ -65,6 +68,7 @@ class Generator():
         cv2.polylines(img, [center_line_pts], isClosed=True, color=0, thickness=expand_width, lineType=cv2.LINE_AA)
         img = img & self.canvas
         return img
+    
     def generate_constrained_points(self, n: int, min_dist: float, max_range: float = 200) -> np.ndarray:
         
         points = []
