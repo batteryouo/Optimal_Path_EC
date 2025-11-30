@@ -6,7 +6,7 @@ def signValue_str(x, showPlus=True)->str:
     else:
         return f"+ {abs(x)}" if showPlus else f"{abs(x)}"
 
-class LINE():
+class Line():
     pt1 = None
     pt2 = None
 

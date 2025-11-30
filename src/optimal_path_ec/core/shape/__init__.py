@@ -1,1 +1,5 @@
-from .line import LINE
+from .line import Line
+
+__all__ = [
+    "Line",
+]

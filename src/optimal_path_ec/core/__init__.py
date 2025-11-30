@@ -3,6 +3,8 @@ __author__ = "Battery"
 __email__ = "oyinggaio@gmail.com"
 __license__ = "MIT License"
 
+from .shape import *
 from .core import run
-import shape
-import func
+from .func import *
+
+__all__ = []
