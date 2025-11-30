@@ -126,4 +126,4 @@ class Motion():
             ys.append(y)
             thetas.append(theta)
 
-        return xs[-1], ys[-1]
+        return xs, ys
