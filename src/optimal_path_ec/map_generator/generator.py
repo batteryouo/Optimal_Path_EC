@@ -62,11 +62,28 @@ class Generator():
         height, width = self.canvas.shape
 
         img = np.zeros((height, width), dtype=np.uint8) + 255
-        center_line_pts = np.array(pts, np.int32)
+        center_line_pts = np.array(pts, np.int32)[:, ::-1]
         center_line_pts = center_line_pts.reshape((-1, 1, 2))
 
         cv2.polylines(img, [center_line_pts], isClosed=True, color=0, thickness=expand_width, lineType=cv2.LINE_AA)
         img = img & self.canvas
+        return img
+    
+    @classmethod
+    def drawLineAndPoints(cls, img, pts:np.ndarray, isImageCoord:bool=False):
+
+        pts = pts[:, ::-1].astype(np.int32)
+
+        if len(img.shape) == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
+
+        cv2.line(img, pts[0], pts[-1], (255, 255, 0), 1, cv2.LINE_AA)
+        for i in range(len(pts) - 1):
+            cv2.line(img, pts[i], pts[i+1], (255, 255, 0), 1, cv2.LINE_AA)
+        for pt in pts:
+            cv2.circle(img, pt, 3, (0, 0, 255), -1, cv2.LINE_AA)
+        
+        
         return img
     
     def generate_constrained_points(self, n: int, min_dist: float, max_range: float = 200) -> np.ndarray:
