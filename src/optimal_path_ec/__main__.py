@@ -11,7 +11,7 @@ def main():
     while pts is None:
         pts, img = mapGenerator.generate(20, 100, 900, 30, 30)
     img = mapGenerator.drawLineAndPoints(img, pts)
-    core.run()
+    cv2.namedWindow("canvas", 0)
     cv2.imshow("canvas", img)
     cv2.waitKey(0)
 

@@ -4,7 +4,6 @@ __email__ = "oyinggaio@gmail.com"
 __license__ = "MIT License"
 
 from .shape import *
-from .core import run
 from .func import *
 
 __all__ = []
