@@ -11,7 +11,7 @@ class Individual():
     learningRate = None
     uniprng = None
     normprng = None
-    Obj = None
+    objs = None
 
     def __init__(self):
         self.objectives = self.__class__.Obj(self.state)

@@ -11,36 +11,36 @@ class MultiObjective:
         self.states = list(states)
         self.func_list = list(objectives_func_list)
         
-        self.objs = [func(state) for func, state in zip(self.func_list, self.states)]
+        self.values = [func(state) for func, state in zip(self.func_list, self.states)]
     
     def compare(self, other, compare_list):
         results = []
-        if len(self.objs) != len(compare_list):
+        if len(self.values) != len(compare_list):
             raise ValueError("compare_list length must match number of objectives")
         valid = {"min", "max"}
         if not all(c in valid for c in compare_list):
             raise ValueError("compare_list items must be 'min' or 'max'")
 
-        for obj, other_obj, logic in zip(self, other, compare_list):
+        for value, other_value, logic in zip(self, other, compare_list):
 
             if logic == "min":
-                results.append(obj < other_obj)
+                results.append(value < other_value)
 
             else:  # logic == "max"
-                results.append(obj > other_obj)
+                results.append(value > other_value)
 
         return results
 
     def __iter__(self):
-        return iter(self.objs)
+        return iter(self.values)
 
     def __len__(self):
-        return len(self.objs)
+        return len(self.values)
 
     def __getitem__(self, index):
-        return self.objs[index]
+        return self.values[index]
     
     def __call__(self, states):
         self.states = states
-        self.objs = [func(state) for func, state in zip(self.func_list, states)] 
-        return self.objs
+        self.values = [func(state) for func, state in zip(self.func_list, states)] 
+        return self.values
