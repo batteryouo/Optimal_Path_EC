@@ -13,7 +13,7 @@ class MultiObjective:
         
         self.values = [func(state) for func, state in zip(self.func_list, self.states)]
     
-    def compare(self, other, compare_list):
+    def compareValue(self, other, compare_list):
         results = []
         if len(self.values) != len(compare_list):
             raise ValueError("compare_list length must match number of objectives")
