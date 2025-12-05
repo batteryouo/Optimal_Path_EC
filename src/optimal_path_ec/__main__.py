@@ -10,9 +10,9 @@ def main():
     img = None
     while pts is None:
         pts, img = mapGenerator.generate(20, 100, 900, 30, 30)
-    img = mapGenerator.drawLineAndPoints(img, pts)
+    color_map = mapGenerator.drawLineAndPoints(img, pts)
     cv2.namedWindow("canvas", 0)
-    cv2.imshow("canvas", img)
+    cv2.imshow("canvas", color_map)
     cv2.waitKey(0)
 
 if __name__ == "__main__":
