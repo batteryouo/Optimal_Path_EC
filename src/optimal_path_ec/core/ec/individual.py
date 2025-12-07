@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 
-import objective
-import func 
+from . import objective
+from . import func
 
 class Individual():
 

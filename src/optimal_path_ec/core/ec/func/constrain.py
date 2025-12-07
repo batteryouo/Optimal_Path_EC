@@ -3,7 +3,7 @@ import inspect
 import cv2
 import numpy as np
 
-import motion
+from . import motion
 
 class MultiConstrain():
     

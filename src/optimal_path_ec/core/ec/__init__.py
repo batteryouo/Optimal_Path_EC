@@ -1,6 +1,7 @@
-from .individual import Individual
-from .individual import PathIndividual
+from .objective import *
+from .individual import * 
 
-from .objective import MultiObjective
+
 from .func import *
-__all__ = ["Individual", "PathIndividual", "MultiObjective", "func"]
+from .shape import *
+__all__ = ["objective", "individual", "func", "shape"]

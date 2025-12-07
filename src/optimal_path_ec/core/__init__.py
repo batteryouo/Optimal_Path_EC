@@ -3,7 +3,9 @@ __author__ = "Battery"
 __email__ = "oyinggaio@gmail.com"
 __license__ = "MIT License"
 
-from .shape import *
-from .func import *
+from .ec import objective
+from .ec.shape import Line
+from .ec.func import *
 
-__all__ = []
+
+__all__ = ["objective", "shape", "func"]
