@@ -41,7 +41,7 @@ class Generator():
         skeleton_points = self.generate_constrained_points(n, min_dist, max_range)
         ordered_skeleton = self.__connect_via_angular_sort(skeleton_points)
         optimized_skeleton = self.optimize_path_skeleton(ordered_skeleton, min_angle_degrees)
-        if(len(optimized_skeleton) < 3):
+        if(len(optimized_skeleton) < 4):
             return (None, self.canvas)
         
         centerOfFrame = (self.frameSize[0]/2, self.frameSize[1]/2)
@@ -77,7 +77,7 @@ class Generator():
         if len(img.shape) == 2:
             img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
 
-        cv2.line(img, pts[0], pts[-1], (255, 255, 0), 1, cv2.LINE_AA)
+        # cv2.line(img, pts[0], pts[-1], (255, 255, 0), 1, cv2.LINE_AA)
         for i in range(len(pts) - 1):
             cv2.line(img, pts[i], pts[i+1], (255, 255, 0), 1, cv2.LINE_AA)
         for pt in pts:
@@ -208,7 +208,7 @@ class Generator():
                 i = 0
         if len(current_skeleton) < num_pts:
             print(f"Only {len(current_skeleton)}/{num_pts} points met the distance constraint.")
-
+        current_skeleton.append(current_skeleton[0])
         return np.array(current_skeleton)
 
 

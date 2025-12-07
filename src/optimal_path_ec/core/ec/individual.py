@@ -11,38 +11,24 @@ class Individual():
     learningRate = None
     uniprng = None
     normprng = None
-    objs = None
+    objective_func = None
 
     def __init__(self):
-        self.objectives = self.__class__.Obj(self.state)
+        self.objectives = objective.MultiObjective(self.__class__.objective_func, self.states)
         self.mutRate = self.uniprng.uniform(0.9,0.1) #Use "normalized" sigma
         self.numObj = len(self.objectives)
         self.frontRank = None
         self.crowdDist = None
         
-    def dominates(self, other):
-        '''
-        It's your job to implement this function.
-        Refers to HW7 but be careful that we're going to minimize the ManaCost while maximize the damage.
-        (In HW7 we have already learned how to do the min-min problem, and now we are addressing the min-max problem.)
-        '''
+    def dominates(self, other, compare_list = ["max", "max"]):
 
         if self is other:
             return 0
-
-        selfBetter = 0
-        otherBetter = 0
-
-        if self.objectives[0] < other.objectives[0]:
-            selfBetter += 1
-        elif other.objectives[0] < self.objectives[0]:
-            otherBetter += 1
         
-        if self.objectives[1] > other.objectives[1]:
-            selfBetter += 1
-        elif other.objectives[1] > self.objectives[1]:
-            otherBetter += 1
-
+        compare_results = self.objectives.compareValue(other.objectives, compare_list)
+        selfBetter = np.count_nonzero(compare_results)
+        otherBetter = len(compare_results) - selfBetter
+        
         if selfBetter > 0 and otherBetter == 0:
             return 1
         elif otherBetter > 0 and selfBetter == 0:
@@ -68,9 +54,7 @@ class Individual():
                 return 0
                 
     def distance(self, other, normalizationVec=[None]):
-        """
-        Compute distance between self & other in objective space
-        """
+
         # check if self vs self
         if self is other:
             return 0.0
