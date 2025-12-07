@@ -7,26 +7,26 @@ import motion
 
 class MultiConstrain():
     
-    def __init__(self, *funcs):
-        self.constrain_funcs = []
-        for func in funcs:
-            sig = inspect.signature(func)
-            param_names = set(sig.parameters.keys())
+    def __init__(self, func_list, state):
+        self.constrain_funcs = func_list
+        self.results = []
+        for param in state:
+            self.results.append(self.constrain_funcs(param))
+        
+    def __call__(self, state):
+        self.results = []
+        for param in state:
+            self.results.append(self.constrain_funcs(param))
             
-            has_varkw = any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values())
-            
-            self.constrain_funcs.append((func, param_names, has_varkw))
-    def __call__(self, **kwargs):
-        results = []
-        for func, param_names, has_varkw in self.constrain_funcs:
-            if has_varkw:
-                func_kwargs = kwargs
-            else:
-                common_keys = param_names.intersection(kwargs.keys())
-                func_kwargs = {k: kwargs[k] for k in common_keys}
-            
-            results.append(func(func_kwargs))
-        return results
+        return self.results
+    def __iter__(self):
+        return iter(self.results)
+
+    def __len__(self):
+        return len(self.results)
+
+    def __getitem__(self, index):
+        return self.results[index]
     
 class ObstacleCollision():
     
@@ -39,7 +39,7 @@ class ObstacleCollision():
         img = cv2.threshold(img, 127, 255, cv2.THRESH_OTSU)
         self.img = img
         
-    def checkCollision(self, pts, dilate_radius:int = 1):
+    def isSafe(self, pts, dilate_radius:int = 1):
         """Check if pass through the obstacle\n
         #### 0: safe region
         #### otherwise: obstacle
@@ -65,9 +65,9 @@ class ObstacleCollision():
         collision_roi = cv2.bitwise_and(self.img, mask)
         pixel_count = cv2.countNonZero(collision_roi)
         if pixel_count > 0:
-            return True
-        else:
             return False
+        else:
+            return True
         
     def boundingPoint(self, pt):
         if pt[0] < 0:
@@ -81,6 +81,9 @@ class ObstacleCollision():
             pt[1] = self.img.shape[1] -1
         
         return pt 
+    
+    def __call__(self, pts, dilate_radius:int = 1):
+        return self.isSafe(pts, dilate_radius)
 
 def constModelConstrain(pt1, a1, b1, c1, d, initToward, finalToward):
     model = motion.ConstMotion(d)

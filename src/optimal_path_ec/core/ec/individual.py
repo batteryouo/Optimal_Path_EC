@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 import objective
+import func 
 
 class Individual():
 
@@ -12,9 +13,14 @@ class Individual():
     uniprng = None
     normprng = None
     objective_func = None
+    constrain_func = None
 
     def __init__(self):
         self.objectives = objective.MultiObjective(self.__class__.objective_func, self.states)
+        if self.constrain_func is not None:
+            self.constrains = func.MultiConstrain(self.constrain_func, self.states)
+        else:
+            self.constrains = None
         self.mutRate = self.uniprng.uniform(0.9,0.1) #Use "normalized" sigma
         self.numObj = len(self.objectives)
         self.frontRank = None
@@ -24,6 +30,17 @@ class Individual():
 
         if self is other:
             return 0
+        
+        if self.constrains is not None and other.constrains is not None:
+            selfConstrain = np.sum(self.constrains.results)
+            otherConstrain = np.sum(other.constrains.results)
+            
+            if selfConstrain > otherConstrain:
+                return 1
+            if selfConstrain < otherConstrain:
+                return -1
+            if selfConstrain != 0:
+                return 0
         
         compare_results = self.objectives.compareValue(other.objectives, compare_list)
         selfBetter = np.count_nonzero(compare_results)
@@ -76,5 +93,17 @@ class Individual():
         return distance
 
 class PathIndividual(Individual):
-    def __init__(self):
+    def __init__(self, img, pts):
+        self.state=[]
+        self.img = img
+        self.pts = pts
+        
+        self.state.append([self.uniprng.uniform(0, 1), self.uniprng.uniform(0, 1)])
+        firstPointIn = self.state[0][0]
+        lastPointOut = self.state[0][1]
+        for _ in range(len(self.pts) - 2):
+            self.state.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, 1)])
+            lastPointOut = self.state[-1][1]
+        
+        self.state.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
         super().__init__()
