@@ -15,5 +15,7 @@ def main():
     cv2.imshow("canvas", color_map)
     cv2.waitKey(0)
 
+    core.ec.PathIndividual(img, pts)
+
 if __name__ == "__main__":
     main()

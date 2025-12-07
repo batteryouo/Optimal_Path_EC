@@ -3,12 +3,11 @@ import math
 import numpy as np
 
 class MultiObjective:
-    def __init__(self, states, objectives_func_list):
+    def __init__(self, objectives_func_list, states):
+        # if len(states) != len(objectives_func_list):
+        #     raise ValueError(f"len(states) = {len(states)}, but len(objectives_func_list) = {len(objectives_func_list)}")
         
-        if len(states) != len(objectives_func_list):
-            raise ValueError(f"len(states) = {len(states)}, but len(objectives_func_list) = {len(objectives_func_list)}")
-        
-        self.states = list(states)
+        self.states = states
         self.func_list = list(objectives_func_list)
         
         self.values = [func(state) for func, state in zip(self.func_list, self.states)]

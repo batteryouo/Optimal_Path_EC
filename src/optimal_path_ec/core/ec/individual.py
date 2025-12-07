@@ -21,7 +21,7 @@ class Individual():
             self.constrains = func.MultiConstrain(self.constrain_func, self.states)
         else:
             self.constrains = None
-        self.mutRate = self.uniprng.uniform(0.9,0.1) #Use "normalized" sigma
+        self.mutRate = self.uniprng.uniform(0.1,0.9) #Use "normalized" sigma
         self.numObj = len(self.objectives)
         self.frontRank = None
         self.crowdDist = None
@@ -94,16 +94,17 @@ class Individual():
 
 class PathIndividual(Individual):
     def __init__(self, img, pts):
-        self.state=[]
+        self.states=[]
         self.img = img
         self.pts = pts
         
-        self.state.append([self.uniprng.uniform(0, 1), self.uniprng.uniform(0, 1)])
-        firstPointIn = self.state[0][0]
-        lastPointOut = self.state[0][1]
+        self.states.append([self.uniprng.uniform(0, 1), self.uniprng.uniform(0, 1)])
+        firstPointIn = self.states[0][0]
+        lastPointOut = self.states[0][1]
         for _ in range(len(self.pts) - 2):
-            self.state.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, 1)])
-            lastPointOut = self.state[-1][1]
+            self.states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, 1)])
+            lastPointOut = self.states[-1][1]
         
-        self.state.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
+        self.states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
+        self.states = [self.states, self.states]
         super().__init__()
