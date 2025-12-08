@@ -13,6 +13,9 @@ class Line():
     def __init__(self, pt1, pt2):
         self.pt1 = pt1
         self.pt2 = pt2
+        vec = pt2 - pt1
+        self.length = np.linalg.norm(vec)
+        self.theta = np.atan2(vec[1], vec[0])
 
         self.a, self.b, self.c = self.computeABC(pt1, pt2)
 

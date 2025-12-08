@@ -5,11 +5,10 @@ class ConstMotion():
     def __init__(self, d):
         self.d = d
 
-    @classmethod
-    def calW(cls, V, theta, d = None):
-        if cls.d is None:
-            cls.d = d
-        return V/cls.d * np.sin(theta)
+    def calW(self, V, theta, d = None):
+        if self.d is None:
+            self.d = d
+        return V/self.d * np.sin(theta)
     
     @classmethod
     def calToward(cls, initToward, w, timeStep):
@@ -22,19 +21,19 @@ class ConstMotion():
 
         return np.array([x, y])
     
-    @classmethod
-    def findTheta(cls, pt1, a1, b1, c1, d, initToward, finalToward):
+    def findTheta(self, pt1, a1, b1, c1, initToward, finalToward):
         if initToward == finalToward:
             return 0
         h0 = np.sin(finalToward) - np.sin(initToward)
         h1 = np.cos(initToward) - np.cos(finalToward)
         
         distanceOfline = a1*pt1[0] + b1*pt1[1] + c1
-        turnFactor = d*(a1*h0 + b1*h1)
-        if abs(turnFactor) < abs(distanceOfline):
-            return None
+        turnFactor = self.d*(a1*h0 + b1*h1)
+        # print(f"distanceOfline: {distanceOfline}, turnFactor: {turnFactor}, pt: {pt1}")
+        if abs(distanceOfline / turnFactor) > 1:
+            return None           
         
-        return np.arcsin(distanceOfline/turnFactor)
+        return np.arcsin(-distanceOfline/turnFactor)
 
 class Motion():
     d = 1
