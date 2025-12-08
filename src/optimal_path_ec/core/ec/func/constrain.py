@@ -7,17 +7,30 @@ from . import motion
 
 class MultiConstrain():
     
-    def __init__(self, func_list, state):
+    def __init__(self, func_list:list, state):
         self.constrain_funcs = func_list
         self.results = []
-        for param in state:
-            self.results.append(self.constrain_funcs(param))
-        
-    def __call__(self, state):
-        self.results = []
-        for param in state:
-            self.results.append(self.constrain_funcs(param))
+
+        for func in func_list:
+            sig = inspect.signature(func)
+
+            param_names = set(sig.parameters.keys())
             
+            has_varkw = any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values())
+            
+            self.constrain_funcs.append((func, param_names, has_varkw))
+        
+    def __call__(self, **kwargs):
+        self.results = []
+
+        for func, param_names, has_varkw in self.constrain_funcs:
+            if has_varkw:
+                func_kwargs = kwargs
+            else:
+                common_keys = param_names.intersection(kwargs.keys())
+                func_kwargs = {k: kwargs[k] for k in common_keys}
+            
+            self.results.append(func(**func_kwargs))
         return self.results
     def __iter__(self):
         return iter(self.results)

@@ -13,9 +13,9 @@ def main():
     color_map = mapGenerator.drawLineAndPoints(img, pts)
     cv2.namedWindow("canvas", 0)
     cv2.imshow("canvas", color_map)
-    cv2.waitKey(0)
-
+    
     core.ec.PathIndividual(img, pts)
+    cv2.waitKey(0)
 
 if __name__ == "__main__":
     main()

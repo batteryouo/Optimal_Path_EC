@@ -16,7 +16,8 @@ class Individual():
     constrain_func = None
 
     def __init__(self):
-        self.objectives = objective.MultiObjective(self.__class__.objective_func, self.states)
+
+        self.objectives = objective.MultiObjective(objectives_func_list=self.__class__.objective_func, **self.states)
         if self.constrain_func is not None:
             self.constrains = func.MultiConstrain(self.constrain_func, self.states)
         else:
@@ -106,5 +107,5 @@ class PathIndividual(Individual):
             lastPointOut = self.states[-1][1]
         
         self.states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
-        self.states = [self.states, self.states]
+        self.states = {"states": self.states}
         super().__init__()

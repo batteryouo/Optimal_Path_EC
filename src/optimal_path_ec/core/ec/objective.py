@@ -1,16 +1,32 @@
+import inspect
 import math
 
 import numpy as np
 
 class MultiObjective:
-    def __init__(self, objectives_func_list, states):
+    def __init__(self, objectives_func_list, **kwargs):
         # if len(states) != len(objectives_func_list):
         #     raise ValueError(f"len(states) = {len(states)}, but len(objectives_func_list) = {len(objectives_func_list)}")
-        
-        self.states = states
-        self.func_list = list(objectives_func_list)
-        
-        self.values = [func(state) for func, state in zip(self.func_list, self.states)]
+        self.func_list = []
+        self.values = []
+        for func in objectives_func_list:
+            sig = inspect.signature(func)
+
+            param_names = set(sig.parameters.keys())
+            
+            has_varkw = any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values())
+            
+            self.func_list.append((func, param_names, has_varkw))
+                 
+        for func, param_names, has_varkw in self.func_list:
+            if has_varkw:
+                func_kwargs = kwargs
+            else:
+                common_keys = param_names.intersection(kwargs.keys())
+                func_kwargs = {k: kwargs[k] for k in common_keys}
+            
+            self.values.append(func(**func_kwargs))
+        self.states = kwargs
     
     def compareValue(self, other, compare_list):
         results = []
@@ -39,7 +55,15 @@ class MultiObjective:
     def __getitem__(self, index):
         return self.values[index]
     
-    def __call__(self, states):
-        self.states = states
-        self.values = [func(state) for func, state in zip(self.func_list, states)] 
+    def __call__(self, **kwargs):
+        self.states = kwargs
+        self.values = []
+        for func, param_names, has_varkw in self.func_list:
+            if has_varkw:
+                func_kwargs = kwargs
+            else:
+                common_keys = param_names.intersection(kwargs.keys())
+                func_kwargs = {k: kwargs[k] for k in common_keys}
+            
+            self.values.append(func(**func_kwargs))
         return self.values
