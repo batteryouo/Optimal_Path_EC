@@ -8,15 +8,12 @@ from . import shape
 
 class Individual():
 
-    minMutRate = 1e-100
-    maxMutRate = 1
-    learningRate = None
     uniprng = None
     normprng = None
     objective_func = None
     constrain_func = None
 
-    def __init__(self):
+    def __init__(self, minMutRate = 1e-100, maxMutRate = 1, learningRate = 1e-1):
 
         self.objectives = objective.MultiObjective(objectives_func_list=self.__class__.objective_func, **self.states)
         if self.constrain_func is not None:
@@ -114,8 +111,8 @@ class PathIndividual(Individual):
         
         states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
         from . func import motion
+        model = motion.ConstMotion(5)
 
-        model = motion.ConstMotion(100)
         for i in range(len(pts) - 1):
             theta = model.findTheta(self.pathLine[i].percentage2point(states[i][0]), self.pathLine[i+1].a, self.pathLine[i+1].b, self.pathLine[i+1].c,
                             self.pathLine[i].theta, self.pathLine[i + 1].theta)

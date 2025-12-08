@@ -9,7 +9,7 @@ def main():
     pts = None
     img = None
     while pts is None:
-        pts, img = mapGenerator.generate(20, 10, 900, 30, 30)
+        pts, img = mapGenerator.generate(20, 100, 900, 30, 30)
     color_map = mapGenerator.drawLineAndPoints(img, pts)
     cv2.namedWindow("canvas", 0)
     cv2.imshow("canvas", color_map)
