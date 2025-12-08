@@ -103,6 +103,7 @@ class PathIndividual(Individual):
         for i in range(len(pts) - 1):
             line = shape.Line(pts[i], pts[i + 1])
             self.pathLine.append(line)
+        self.pathLine.append(shape.Line(pts[-1], pts[0]))
         
         states.append([self.uniprng.uniform(0, 1), self.uniprng.uniform(0, 1)])
         firstPointIn = states[0][0]
@@ -113,11 +114,9 @@ class PathIndividual(Individual):
         
         states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
         from . func import motion
-        print(pts)
-        print()
-        print(states)
+
         model = motion.ConstMotion(100)
-        for i in range(len(pts) - 2):
+        for i in range(len(pts) - 1):
             theta = model.findTheta(self.pathLine[i].percentage2point(states[i][0]), self.pathLine[i+1].a, self.pathLine[i+1].b, self.pathLine[i+1].c,
                             self.pathLine[i].theta, self.pathLine[i + 1].theta)
             print(theta)

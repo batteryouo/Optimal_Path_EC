@@ -1,7 +1,7 @@
 import numpy as np
 
 class ConstMotion():
-    d = None
+    d = 1 
     def __init__(self, d):
         self.d = d
 
@@ -22,6 +22,7 @@ class ConstMotion():
         return np.array([x, y])
     
     def findTheta(self, pt1, a1, b1, c1, initToward, finalToward):
+        # print(f"pt1: {pt1}, a1: {a1}, b1: {b1}, c1: {c1}, initToward: {initToward}, finalToward: {finalToward}" )
         if initToward == finalToward:
             return 0
         h0 = np.sin(finalToward) - np.sin(initToward)
