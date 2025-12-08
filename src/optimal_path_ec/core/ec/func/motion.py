@@ -21,12 +21,12 @@ class ConstMotion():
 
         return np.array([x, y])
     
-    def findTheta(self, pt1, a1, b1, c1, initToward, finalToward):
+    def findTheta(self, pt0, a1, b1, c1, initToward, finalToward):
         
         h0 = np.sin(finalToward) - np.sin(initToward)
         h1 = np.cos(initToward) - np.cos(finalToward)
 
-        distanceOfline = a1*pt1[0] + b1*pt1[1] + c1
+        distanceOfline = a1*pt0[0] + b1*pt0[1] + c1
         turnFactor = self.d*(a1*h0 + b1*h1)
 
         if distanceOfline == 0: 
@@ -36,6 +36,14 @@ class ConstMotion():
             return None           
         
         return np.arcsin(-turnFactor/distanceOfline)
+    
+    def calEndXY(self, pt0, theta, initToward, finalToward):
+        h0 = np.sin(finalToward) - np.sin(initToward)
+        h1 = np.cos(initToward) - np.cos(finalToward)
+
+        pt1 = pt0 + self.d/np.sin(theta) * np.array([h0, h1])
+
+        return pt1
 
 class Motion():
     d = 1

@@ -5,6 +5,7 @@ import numpy as np
 from . import objective
 from . import func
 from . import shape
+from . func import motion
 
 class Individual():
 
@@ -97,21 +98,31 @@ class PathIndividual(Individual):
         self.img = img
         self.pts = pts
         self.pathLine = []
+
+        model = motion.ConstMotion(5)      
+
         for i in range(len(pts) - 1):
             line = shape.Line(pts[i], pts[i + 1])
             self.pathLine.append(line)
         self.pathLine.append(shape.Line(pts[-1], pts[0]))
+
+        firstPointIn = self.uniprng.uniform(0, 1)
+        theta = model.findTheta(self.pathLine[0].percentage2point(firstPointIn), self.pathLine[1].a, self.pathLine[1].b, self.pathLine[1].c,
+                                self.pathLine[0].theta, self.pathLine[1].theta)
         
-        states.append([self.uniprng.uniform(0, 1), self.uniprng.uniform(0, 1)])
-        firstPointIn = states[0][0]
-        lastPointOut = states[0][1]
+        if theta is not None:
+            lastPointOut = model.calEndXY(self.pathLine[0].percentage2point(firstPointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
+            lastPointOut = np.linalg.norm(lastPointOut - pts[1]) / self.pathLine[1].length
+        else:
+            lastPointOut = 0
+        states.append([firstPointIn, lastPointOut])
+
         for _ in range(len(self.pts) - 2):
             states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, 1)])
             lastPointOut = states[-1][1]
         
         states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
-        from . func import motion
-        model = motion.ConstMotion(5)
+
 
         for i in range(len(pts) - 1):
             theta = model.findTheta(self.pathLine[i].percentage2point(states[i][0]), self.pathLine[i+1].a, self.pathLine[i+1].b, self.pathLine[i+1].c,
