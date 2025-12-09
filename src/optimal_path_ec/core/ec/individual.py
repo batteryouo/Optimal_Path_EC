@@ -93,37 +93,47 @@ class Individual():
         return distance
 
 class PathIndividual(Individual):
-    def __init__(self, img, pts):
+    def __init__(self, img, pts, model = None):
         states = []
         self.img = img
         self.pts = pts
         self.pathLine = []
 
-        model = motion.ConstMotion(5)      
+        model = motion.ConstMotion(1)      
 
         for i in range(len(pts) - 1):
             line = shape.Line(pts[i], pts[i + 1])
             self.pathLine.append(line)
         self.pathLine.append(shape.Line(pts[-1], pts[0]))
 
-        firstPointIn = self.uniprng.uniform(0, 1)
-        theta = model.findTheta(self.pathLine[0].percentage2point(firstPointIn), self.pathLine[1].a, self.pathLine[1].b, self.pathLine[1].c,
-                                self.pathLine[0].theta, self.pathLine[1].theta)
+        lastPointOut = 0
         
+        for _ in range(len(self.pts) - 2):
+            pointIn = self.uniprng.uniform(lastPointOut, 1)
+            theta = model.findTheta(self.pathLine[i].percentage2point(pointIn), self.pathLine[i + 1].a, self.pathLine[i + 1].b, self.pathLine[i + 1].c,
+                                self.pathLine[i].theta, self.pathLine[i + 1].theta)
+            if theta is not None:
+                lastPointOut = model.calEndXY(self.pathLine[0].percentage2point(pointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
+                lastPointOut = np.linalg.norm(lastPointOut - pts[1]) / self.pathLine[1].length
+            else:
+                lastPointOut = 0
+                
+            if lastPointOut < 0 or lastPointOut >= 1:
+                lastPointOut = 0
+            states.append([pointIn, lastPointOut])
+        pointIn = self.uniprng.uniform(lastPointOut, 1)
+        theta = model.findTheta(self.pathLine[i].percentage2point(pointIn), self.pathLine[i + 1].a, self.pathLine[i + 1].b, self.pathLine[i + 1].c,
+                            self.pathLine[i].theta, self.pathLine[i + 1].theta)
         if theta is not None:
-            lastPointOut = model.calEndXY(self.pathLine[0].percentage2point(firstPointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
+            lastPointOut = model.calEndXY(self.pathLine[0].percentage2point(pointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
             lastPointOut = np.linalg.norm(lastPointOut - pts[1]) / self.pathLine[1].length
         else:
             lastPointOut = 0
-        states.append([firstPointIn, lastPointOut])
-
-        for _ in range(len(self.pts) - 2):
-            states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, 1)])
-            lastPointOut = states[-1][1]
         
-        states.append([self.uniprng.uniform(lastPointOut, 1), self.uniprng.uniform(0, firstPointIn)])
-
-
+        if lastPointOut > states[0][0] or lastPointOut < 0 or lastPointOut >= 1:
+            lastPointOut = 0
+        states.append([pointIn, lastPointOut])
+        print(states)
         for i in range(len(pts) - 1):
             theta = model.findTheta(self.pathLine[i].percentage2point(states[i][0]), self.pathLine[i+1].a, self.pathLine[i+1].b, self.pathLine[i+1].c,
                             self.pathLine[i].theta, self.pathLine[i + 1].theta)
