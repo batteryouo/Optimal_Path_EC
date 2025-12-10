@@ -91,12 +91,9 @@ class ObstacleCollision():
             pt2 = int(pt2[1]), int(pt2[0])
             
             cv2.line(mask, pt1, pt2, 255, dilate_radius, cv2.LINE_AA)
-            cv2.line(self.img, pt1, pt2, 127, 10, cv2.LINE_AA) 
         collision_roi = cv2.bitwise_and(self.img, mask)
         pixel_count = cv2.countNonZero(collision_roi)
-        cv2.namedWindow("img1", 0)
-        cv2.imshow("img1", self.img)
-        cv2.waitKey(0)
+
         if pixel_count > 0:
             return False
         else:
@@ -117,27 +114,26 @@ class ObstacleCollision():
     
     def __call__(self, model, states, theta_array, line, dilate_radius:int = 1):
         self.results = []
-        print(states)
-        for i in range(len(states) - 1):
+        v = 1
+        dt = 0.1
+        for i in range(len(states)):
+            if i >= len(states) - 1:
+                i = -1
             if theta_array[i] is None:
                 continue
             theta = theta_array[i]
-            v = 1
-            dt = 1
             w = model.calW(1, theta)
             toward = line[i].theta
             initial_point = line[i].percentage2point(states[i][0])
             target_point = line[i + 1].percentage2point(states[i][1])
-            print(initial_point, target_point, model.calEndXY(initial_point, theta, line[i].theta, line[i+1].theta))
-            print("====================")
             pt = initial_point
             pts = [pt]
-            while np.linalg.norm(pt - target_point) > 10:
+            while np.linalg.norm(pt - target_point) > 1:
                 pt = model.calXY(pt, toward, v, dt, w)
                 toward = model.calToward(toward, w, dt)
                 pts.append(pt)
             self.results.append(self.isSafe(pts, dilate_radius))  
-        print(self.results)
+        
         return self.results
         
 

@@ -25,14 +25,16 @@ class Individual():
             self.constrains = func.MultiConstrain(self.constrain_func, self.states)
         else:
             self.constrains = None
-        self.mutRate = self.uniprng.uniform(0.1,0.9) #Use "normalized" sigma
+        self.muteRate = self.uniprng.uniform(0.1,0.9) #Use "normalized" sigma
         self.numObj = len(self.objectives)
         self.frontRank = None
         self.crowdDist = None
-
-        print(self.objectives.values)
-        print(self.constrains.results)
         
+    def mutateMutRate(self):
+        self.muteRate=self.muteRate*math.exp(self.learningRate*self.uniprng.normalvariate(0,1))
+        if self.muteRate < self.minMuteRate: self.muteRate=self.minMuteRate
+        if self.muteRate > self.maxMuteRate: self.muteRate=self.maxMuteRate
+             
     def dominates(self, other, compare_list = ["max", "max"]):
 
         if self is other:
@@ -133,7 +135,7 @@ class PathIndividual(Individual):
         theta = model.findTheta(self.pathLine[-1].percentage2point(pointIn), self.pathLine[0].a, self.pathLine[0].b, self.pathLine[0].c,
                             self.pathLine[-1].theta, self.pathLine[0].theta)
         if theta is not None:
-            lastPointOut = model.calEndXY(self.pathLine[-1].percentage2point(pointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
+            lastPointOut = model.calEndXY(self.pathLine[-1].percentage2point(pointIn), theta, self.pathLine[-1].theta, self.pathLine[0].theta)
             lastPointOut = np.linalg.norm(lastPointOut - pts[0]) / self.pathLine[0].length
         else:
             lastPointOut = 0 
@@ -146,3 +148,19 @@ class PathIndividual(Individual):
         self.states = {"states": states, "theta_array": self.theta_array, "line": self.pathLine, "dilate_radius": self.model.d, "model": self.model}
         obstacleConstrain = func.constrain.ObstacleCollision(self.img)
         super().__init__(objective_func=[func.fitness.smoothCurveFitness, func.fitness.straightLineFitness], constrain_func=[obstacleConstrain, func.constrain.constModelConstrain])
+    def crossover(self, other):
+        self.constrains.results
+        other.constrains.results
+    def mutate(self):
+        self.mutateMutRate() #update mutation rate
+        
+        '''
+        It's your choice to use any mutate function you learned from our course. 
+        '''
+
+        for i in range(len(self.state)):
+            
+            # if self.uniprng.random() < self.mutRate:
+            self.state[i] = self.state[i] + self.mutRate*self.normprng.normalvariate(0,1)
+            self.state[i] = int( self.__constrain( round( self.state[i] ), 0, self.nSpells-1 ) )
+        self.objectives=None
