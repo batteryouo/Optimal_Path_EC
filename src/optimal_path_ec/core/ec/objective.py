@@ -1,3 +1,4 @@
+import copy
 import inspect
 import math
 
@@ -45,7 +46,9 @@ class MultiObjective:
                 results.append(value > other_value)
 
         return results
-
+    def copy(self):
+        values = copy.deepcopy(self.values)
+        return values
     def __iter__(self):
         return iter(self.values)
 

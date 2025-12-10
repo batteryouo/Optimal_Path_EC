@@ -7,6 +7,7 @@ from . import default_settings
 from .ec import objective
 from .ec.shape import Line
 from .ec.func import *
+from .ec.population import *
+from .ec.individual import *
 
-
-__all__ = ["objective", "shape", "func"]
+__all__ = ["objective", "shape", "func", "population", "individual"]

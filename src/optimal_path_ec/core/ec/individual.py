@@ -1,3 +1,4 @@
+import copy 
 import math
 
 import numpy as np
@@ -9,9 +10,8 @@ from . func import motion
 
 class Individual():
 
-    uniprng = None
-    normprng = None
-    def __init__(self, objective_func = None, constrain_func = None, minMutRate = 1e-100, maxMutRate = 1, learningRate = 1e-1):
+
+    def __init__(self, objective_func = None, constrain_func = None, minMutRate = 1e-100, maxMutRate = 1, learningRate = 1e-1, uniprng = None, normprng = None):
         self.objective_func = objective_func
         
         self.objective_func = objective_func
@@ -19,7 +19,8 @@ class Individual():
         self.minMuteRate = minMutRate
         self.maxMuteRate = maxMutRate
         self.learningRate = learningRate
-        
+        self.uniprng = uniprng
+        self.normprng = normprng      
         self.objectives = objective.MultiObjective(objectives_func_list=self.objective_func, **self.states)
         if self.constrain_func is not None:
             self.constrains = func.MultiConstrain(self.constrain_func, self.states)
@@ -29,9 +30,13 @@ class Individual():
         self.numObj = len(self.objectives)
         self.frontRank = None
         self.crowdDist = None
-        
+    def evaluateObjectives(self):
+        self.objectives(**self.states)
+        if self.constrains is not None:
+            self.constrains(**self.states)
+            
     def mutateMuteRate(self):
-        self.muteRate=self.muteRate*math.exp(self.learningRate*self.uniprng.normalvariate(0,1))
+        self.muteRate=self.muteRate*math.exp(self.learningRate*self.uniprng.normal(0,1))
         if self.muteRate < self.minMuteRate: self.muteRate=self.minMuteRate
         if self.muteRate > self.maxMuteRate: self.muteRate=self.maxMuteRate
              
@@ -102,13 +107,15 @@ class Individual():
         return distance
 
 class PathIndividual(Individual):
-    def __init__(self, img, pts, model):
+    def __init__(self, img, pts, model, uniprng, normprng):
         states = []
         self.theta_array = []
         self.img = img
         self.pts = pts
         self.pathLine = []
         self.model = model
+        self.uniprng = uniprng
+        self.normprng = normprng
 
         for i in range(len(pts) - 1):
             line = shape.Line(pts[i], pts[i + 1])
@@ -128,9 +135,29 @@ class PathIndividual(Individual):
 
         self.states = {"states": states, "theta_array": self.theta_array, "line": self.pathLine, "dilate_radius": self.model.d, "model": self.model}
         obstacleConstrain = func.constrain.ObstacleCollision(self.img)
-        super().__init__(objective_func=[func.fitness.smoothCurveFitness, func.fitness.straightLineFitness], constrain_func=[obstacleConstrain, func.constrain.constModelConstrain])
+        super().__init__(objective_func=[func.fitness.smoothCurveFitness, func.fitness.straightLineFitness], constrain_func=[obstacleConstrain, func.constrain.constModelConstrain],
+                         uniprng=uniprng, normprng=normprng)
+    
+    def complementCrossover(self, other):
+        selfStates = self.states["states"]
+        otherStates = other.states["states"]
+        selfConstrain = self.constrains.results
+        otherConstrain = other.constrains.results
+        for i in range(len(selfStates)):
+            if (not selfConstrain[i] or not selfConstrain[i + len(selfStates)]) and (otherConstrain[i] and otherConstrain[i + len(selfStates)]):
+                selfStates[i] = otherStates[i]
+                self.states["states"] = copy.deepcopy(otherStates)
+                self.states["theta_array"] = copy.deepcopy(other.states["theta_array"])
+            self.spliceCheck(i)
+            if (not otherConstrain[i] or not otherConstrain[i + len(selfStates)]) and (selfConstrain[i] and selfConstrain[i + len(selfStates)]):
+                other.states["states"] = copy.deepcopy(selfStates)
+                other.states["theta_array"] = copy.deepcopy(self.states["theta_array"])
+            other.spliceCheck(i)
+        
+        
+            
     def floatCrossover(self, other):
-        selfStates = self.states["statets"]
+        selfStates = self.states["states"]
         otherStates = other.states["states"]
         for i in range(-1, len(selfStates)-2):
             alpha = self.uniprng.uniform(0, 1)
@@ -149,8 +176,9 @@ class PathIndividual(Individual):
                 lastPointOut = 0
                 selfTheta = None
             else:
-                self.states["state"][i] = [selfPointIn, lastPointOut]
+                self.states["states"][i] = [selfPointIn, lastPointOut]
                 self.states["theta_array"][i] = selfTheta
+            self.spliceCheck(i)
             
              
             if otherTheta is not None:
@@ -162,10 +190,11 @@ class PathIndividual(Individual):
                 lastPointOut = 0
                 otherTheta = None
             else:
-                other.states["state"][i] = [otherPointIn, lastPointOut]
-                other.states["theta_array"][i] = otherTheta                 
-        self.clear()
-        other.clear() 
+                other.states["states"][i] = [otherPointIn, lastPointOut]
+                other.states["theta_array"][i] = otherTheta
+            other.spliceCheck(i)           
+        # self.clear()
+        # other.clear() 
         
     def doublePointCrossover(self, other):
         selfStates = self.states["states"]
@@ -187,8 +216,8 @@ class PathIndividual(Individual):
         self.spliceCheck(p2) 
         other.spliceCheck(p1)
         other.spliceCheck(p2) 
-        self.clear()
-        other.clear() 
+        # self.clear()
+        # other.clear() 
     
     def mutate(self):
         self.mutateMuteRate() #update mutation rate

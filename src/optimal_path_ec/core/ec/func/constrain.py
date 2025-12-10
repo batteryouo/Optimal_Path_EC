@@ -91,12 +91,12 @@ class ObstacleCollision():
             pt2 = int(pt2[1]), int(pt2[0])
             
             cv2.line(mask, pt1, pt2, 255, dilate_radius, cv2.LINE_AA)
-            cv2.line(self.img, pt1, pt2, 125, dilate_radius, cv2.LINE_AA)
+            # cv2.line(self.img, pt1, pt2, 125, dilate_radius, cv2.LINE_AA)
         collision_roi = cv2.bitwise_and(self.img, mask)
         pixel_count = cv2.countNonZero(collision_roi)
-        cv2.namedWindow("i", 0)
-        cv2.imshow("i", self.img)
-        cv2.waitKey(0)
+        # cv2.namedWindow("i", 0)
+        # cv2.imshow("i", self.img)
+        # cv2.waitKey(0)
         if pixel_count > 0:
             return False
         else:
@@ -132,10 +132,15 @@ class ObstacleCollision():
             target_point = line[i + 1].percentage2point(states[i][1])
             pt = initial_point
             pts = [pt]
+            counter = 0
             while np.linalg.norm(pt - target_point) > 1:
                 pt = model.calXY(pt, toward, v, dt, w)
                 toward = model.calToward(toward, w, dt)
                 pts.append(pt)
+                counter += 1
+                if counter == 100000:
+                    print("fuck you")
+
             self.results.append(self.isSafe(pts, dilate_radius))  
         
         return self.results
