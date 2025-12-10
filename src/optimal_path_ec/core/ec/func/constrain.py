@@ -132,15 +132,10 @@ class ObstacleCollision():
             target_point = line[i + 1].percentage2point(states[i][1])
             pt = initial_point
             pts = [pt]
-            counter = 0
-            while np.linalg.norm(pt - target_point) > 1:
+            while np.linalg.norm(pt - target_point) > 5:
                 pt = model.calXY(pt, toward, v, dt, w)
                 toward = model.calToward(toward, w, dt)
                 pts.append(pt)
-                counter += 1
-                if counter == 100000:
-                    print("fuck you")
-
             self.results.append(self.isSafe(pts, dilate_radius))  
         
         return self.results

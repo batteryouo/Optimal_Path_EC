@@ -46,7 +46,7 @@ class PathPopulation:
         for individual in self.population:
             individual.mutate()
             
-    def crossover(self):
+    def complementCrossover(self):
         indexList1=list(range(len(self)))
         indexList2=list(range(len(self)))
         self.uniprng.shuffle(indexList1)
@@ -54,13 +54,46 @@ class PathPopulation:
             
         if self.crossoverFraction == 1.0:             
             for index1,index2 in zip(indexList1,indexList2):
-                self[index1].crossover(self[index2])
+                self[index1].complementCrossover(self[index2])   
         else:
             for index1,index2 in zip(indexList1,indexList2):
                 rn=self.uniprng.random()
                 if rn < self.crossoverFraction:
-                    # self[index1].complementCrossover(self[index2])     
-                    self[index1].floatCrossover(self[index2])     
+                    self[index1].complementCrossover(self[index2])  
+
+    def floatCrossover(self):
+        indexList1=list(range(len(self)))
+        indexList2=list(range(len(self)))
+        self.uniprng.shuffle(indexList1)
+        self.uniprng.shuffle(indexList2)
+            
+        if self.crossoverFraction == 1.0:             
+            for index1,index2 in zip(indexList1,indexList2):   
+                self[index1].floatCrossover(self[index2])  
+                # self[index1].complementCrossover(self[index2]) 
+        else:
+            for index1,index2 in zip(indexList1,indexList2):
+                rn=self.uniprng.random()
+                if rn < self.crossoverFraction: 
+                    self[index1].floatCrossover(self[index2])  
+                    # self[index1].complementCrossover(self[index2]) 
+
+    def doublePointCrossover(self):
+        indexList1=list(range(len(self)))
+        indexList2=list(range(len(self)))
+        self.uniprng.shuffle(indexList1)
+        self.uniprng.shuffle(indexList2)
+            
+        if self.crossoverFraction == 1.0:             
+            for index1,index2 in zip(indexList1,indexList2):   
+                self[index1].doublePointCrossover(self[index2])  
+                self[index1].complementCrossover(self[index2]) 
+        else:
+            for index1,index2 in zip(indexList1,indexList2):
+                rn=self.uniprng.random()
+                if rn < self.crossoverFraction: 
+                    self[index1].doublePointCrossover(self[index2])  
+                    self[index1].complementCrossover(self[index2]) 
 
     def combinePops(self,otherPop):
         self.population.extend(otherPop.population)
@@ -193,73 +226,6 @@ class PathPopulation:
         self.computeFrontRanks()
         self.computeCrowding()
     
-    # def generatePlots(self,title=None,showPlot=True):
-    #     '''
-    #     It's your job to implement this function.
-    #     You could utilize the function from your (or the answer's) HW7!
-    #     '''
-    #     #first, make sure state & objective space have at least 2 dimensions, pop size at least 1
-    #     if len(self.population) < 1:
-    #         raise Exception('showPlots error: Population size must be >= 1 !')
-    #     if (len(self.population[0].state) < 2) or (len(self.population[0].objectives) < 2):
-    #         raise Exception('showPlots error: State & objective spaces must have at least 2 dimensions!')
-    
-    #     #if front ranking has not been computed, then skip
-    #     # the front-rank plot
-    #     if self.population[0].frontRank is None: plotOrder=[121,122,000]
-    #     else: plotOrder=[121,122]
-
-    #     #top-level attributes for collection of subplots
-    #     if title is not None:
-    #         fig, axs = plt.subplots(13)
-    #         fig.suptitle(title)
-    #     plt.subplots_adjust(wspace=0.75) #increase spacing between plots a bit
-        
-    #     # #individuals in state space
-    #     # plt.subplot(plotOrder[0])
-    #     # x=[ind.state[0] for ind in self.population]
-    #     # y=[ind.state[1] for ind in self.population]
-    #     # plt.scatter(x,y)
-    #     # plt.xlabel('x1')
-    #     # plt.ylabel('x2')
-    #     # plt.title('State Space')
-        
-    #     #individuals in objective space
-    #     plt.subplot(plotOrder[0])
-    #     x=[ind.objectives[0] for ind in self.population]
-    #     y=[ind.objectives[1] for ind in self.population]
-    #     plt.scatter(x,y)
-    #     plt.xlabel('f1')
-    #     plt.ylabel('f2')
-    #     plt.title('Objective Space')
-        
-        
-    #     #Note: If front ranks have not been computed, then
-    #     #      skip the frontRank plot...
-    #     if self.population[0].frontRank is not None:
-    #         #non-dominated ranked fronts in objective space
-    #         plt.subplot(plotOrder[1])   
-            
-    #         #first, let's find highest front rank
-    #         maxRank=0
-    #         for ind in self.population:
-    #             if ind.frontRank > maxRank: maxRank=ind.frontRank
-            
-    #         rank=0
-    #         while rank <= maxRank:
-    #             xy=[ind.objectives for ind in self.population if ind.frontRank == rank]
-    #             xy.sort(key=lambda obj: obj[0]) #need to sort in 1st dim to make connected line plots look sensible!
-    #             x=[obj[0] for obj in xy]
-    #             y=[obj[1] for obj in xy]
-    #             plt.plot(x,y,marker='o',label=str(rank))
-    #             rank+=1
-                
-    #         plt.xlabel('f1')
-    #         plt.ylabel('f2')
-    #         plt.title('Ranked Fronts')
-    #     if showPlot:
-    #         plt.show()
-        
                 
     def __str__(self):
         s=''

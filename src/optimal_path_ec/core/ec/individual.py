@@ -40,14 +40,14 @@ class Individual():
         if self.muteRate < self.minMuteRate: self.muteRate=self.minMuteRate
         if self.muteRate > self.maxMuteRate: self.muteRate=self.maxMuteRate
              
-    def dominates(self, other, compare_list = ["max", "max"]):
+    def dominates(self, other, compare_list = ["min", "max"]):
 
         if self is other:
             return 0
         
         if self.constrains is not None and other.constrains is not None:
-            selfConstrain = np.sum(self.constrains.results == False)
-            otherConstrain = np.sum(other.constrains.results == False)
+            selfConstrain = np.sum(self.constrains.results)
+            otherConstrain = np.sum(other.constrains.results)
             
             if selfConstrain > otherConstrain:
                 return 1
@@ -143,23 +143,24 @@ class PathIndividual(Individual):
         otherStates = other.states["states"]
         selfConstrain = self.constrains.results
         otherConstrain = other.constrains.results
+
         for i in range(len(selfStates)):
             if (not selfConstrain[i] or not selfConstrain[i + len(selfStates)]) and (otherConstrain[i] and otherConstrain[i + len(selfStates)]):
-                selfStates[i] = otherStates[i]
-                self.states["states"] = copy.deepcopy(otherStates)
-                self.states["theta_array"] = copy.deepcopy(other.states["theta_array"])
+                self.states["states"][i] = copy.deepcopy(otherStates[i])
+                self.theta_array[i] = copy.deepcopy(other.theta_array[i])
             self.spliceCheck(i)
             if (not otherConstrain[i] or not otherConstrain[i + len(selfStates)]) and (selfConstrain[i] and selfConstrain[i + len(selfStates)]):
-                other.states["states"] = copy.deepcopy(selfStates)
-                other.states["theta_array"] = copy.deepcopy(self.states["theta_array"])
+                other.states["states"][i] = copy.deepcopy(selfStates[i])
+                other.theta_array[i] = copy.deepcopy(self.theta_array[i])
             other.spliceCheck(i)
-        
-        
+
+        self.states["theta_array"] = self.theta_array
+        other.states["theta_array"] = other.theta_array    
             
     def floatCrossover(self, other):
         selfStates = self.states["states"]
         otherStates = other.states["states"]
-        for i in range(-1, len(selfStates)-2):
+        for i in range(-1, len(selfStates)-1):
             alpha = self.uniprng.uniform(0, 1)
             selfPointIn = alpha*selfStates[i][0] + (1-alpha)*otherStates[i][0]
             otherPointIn = (1-alpha)*selfStates[i][0] + alpha*otherStates[i][0]
@@ -169,7 +170,7 @@ class PathIndividual(Individual):
                                              , other.pathLine[i].theta, other.pathLine[i+1].theta)
             if selfTheta is not None:
                 lastPointOut = self.model.calEndXY(self.pathLine[i].percentage2point(selfPointIn), selfTheta, self.pathLine[i].theta, self.pathLine[i+1].theta)
-                lastPointOut = np.linalg.norm(lastPointOut - self.pts[i]) / self.pathLine[i+1].length
+                lastPointOut = np.linalg.norm(lastPointOut - self.pts[i+1]) / self.pathLine[i+1].length
             else:
                 lastPointOut = 0
             if not self.generateCheck(lastPointOut, selfStates[i+1][0]):
@@ -177,13 +178,13 @@ class PathIndividual(Individual):
                 selfTheta = None
             else:
                 self.states["states"][i] = [selfPointIn, lastPointOut]
-                self.states["theta_array"][i] = selfTheta
+                self.theta_array[i] = selfTheta
             self.spliceCheck(i)
             
              
             if otherTheta is not None:
                 lastPointOut = other.model.calEndXY(other.pathLine[i].percentage2point(otherPointIn), otherTheta, other.pathLine[i].theta, other.pathLine[i+1].theta)
-                lastPointOut = np.linalg.norm(lastPointOut - other.pts[i]) / other.pathLine[i+1].length
+                lastPointOut = np.linalg.norm(lastPointOut - other.pts[i+1]) / other.pathLine[i+1].length
             else:
                 lastPointOut = 0
             if not other.generateCheck(lastPointOut, otherStates[i+1][0]):
@@ -191,31 +192,41 @@ class PathIndividual(Individual):
                 otherTheta = None
             else:
                 other.states["states"][i] = [otherPointIn, lastPointOut]
-                other.states["theta_array"][i] = otherTheta
+                other.theta_array[i] = otherTheta
             other.spliceCheck(i)           
         # self.clear()
         # other.clear() 
-        
+        self.states["theta_array"] = self.theta_array
+        other.states["theta_array"] = other.theta_array
+               
     def doublePointCrossover(self, other):
         selfStates = self.states["states"]
         otherStates = other.states["states"]
+        selfTheta = self.states["theta_array"]
+        otherTheta = other.states["theta_array"]
         assert len(selfStates) == len(otherStates), "Parents must be the same length."
         n = len(selfStates)
         if n < 3:
             p1 = 0
             p2 = 1
         else:
-            p1, p2 = sorted(self.uniprng.sample( range( 1, n ), 2))
+            p1, p2 = sorted(self.uniprng.choice(np.arange(1, n), size=2, replace=False))
+        
         tmp = selfStates[:p1] + otherStates[p1:p2] + selfStates[p2:]
         otherStates = otherStates[:p1] + selfStates[p1:p2] + otherStates[p2:]
         selfStates = tmp
-        
-        self.states["states"] = selfStates
-        other.states["states"] = otherStates
-        self.spliceCheck(p1)
-        self.spliceCheck(p2) 
-        other.spliceCheck(p1)
-        other.spliceCheck(p2) 
+
+        tmp = selfTheta[:p1] + otherTheta[p1:p2] + selfTheta[p2:]
+        otherTheta = otherTheta[:p1] + selfTheta[p1:p2] + otherTheta[p2:]
+        selfTheta = tmp
+        self.theta_array = selfTheta
+        other.theta_array = otherTheta
+
+        self.states = {"states": selfStates, "theta_array": self.theta_array, "line": self.pathLine, "dilate_radius": self.model.d, "model": self.model} 
+        other.states = {"states": otherStates, "theta_array": other.theta_array, "line": other.pathLine, "dilate_radius": other.model.d, "model": other.model} 
+        for i in range(len(selfStates)):
+            self.spliceCheck(i)
+            other.spliceCheck(i)         
         # self.clear()
         # other.clear() 
     
@@ -263,10 +274,12 @@ class PathIndividual(Individual):
         if states[p][0] < states[p-1][1]:
             self.states["states"][p] = [0, 0]
             self.states["theta_array"][p] = None
+            self.theta_array[p] = None
             return False
         if states[p][1] > states[p+1][0]:
             self.states["states"][p] = [0, 0]
             self.states["theta_array"][p] = None
+            self.theta_array[p] = None
             return False
         return True
     
