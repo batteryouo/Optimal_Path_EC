@@ -3,7 +3,6 @@ __author__ = "Battery"
 __email__ = "oyinggaio@gmail.com"
 __license__ = "MIT License"
 
-from . import default_settings
 from .ec import objective
 from .ec.shape import Line
 from .ec.func import *

@@ -1,7 +1,14 @@
+import os
+
 import cv2
 import numpy as np
+
 import core
 import map_generator
+# from utils import readYaml
+
+# cfg = readYaml(os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml"))
+# map_cfg = cfg["map"]
 
 uniprng = np.random.default_rng(123)
 normprng = np.random.default_rng(456)
@@ -25,9 +32,6 @@ def main():
     population.evaluateObjectives()
     for i in range(2):
         
-        '''
-        It's your job to implement the missing EC code here!
-        '''
         offspring=population.copy()
         offspring.binaryTournament()
         offspring.crossover()
