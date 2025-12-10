@@ -5,10 +5,19 @@ import numpy as np
 
 from . import motion
 
+def flatten(lst):
+    flat_list = []
+    for item in lst:
+        if isinstance(item, list):
+            flat_list.extend(flatten(item))
+        else:
+            flat_list.append(item)
+    return flat_list
+
 class MultiConstrain():
     
-    def __init__(self, func_list:list, state):
-        self.constrain_funcs = func_list
+    def __init__(self, func_list:list, states):
+        self.constrain_funcs = [] 
         self.results = []
 
         for func in func_list:
@@ -19,7 +28,15 @@ class MultiConstrain():
             has_varkw = any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values())
             
             self.constrain_funcs.append((func, param_names, has_varkw))
-        
+        for func, param_names, has_varkw in self.constrain_funcs:
+            if has_varkw:
+                func_kwargs = states 
+            else:
+                common_keys = param_names.intersection(states.keys())
+                func_kwargs = {k: states[k] for k in common_keys}
+            
+            self.results.append(func(**func_kwargs))
+        self.results = np.array(flatten(self.results))  
     def __call__(self, **kwargs):
         self.results = []
 
@@ -31,6 +48,7 @@ class MultiConstrain():
                 func_kwargs = {k: kwargs[k] for k in common_keys}
             
             self.results.append(func(**func_kwargs))
+        self.results = np.array(np.array(flatten(self.results)))  
         return self.results
     def __iter__(self):
         return iter(self.results)
@@ -46,10 +64,10 @@ class ObstacleCollision():
     def __init__(self, img):
         if len(img.shape) == 3:
             cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        if len(self.shape) == 4:
+        if len(img.shape) == 4:
             cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
             
-        img = cv2.threshold(img, 127, 255, cv2.THRESH_OTSU)
+        _, img = cv2.threshold(img, 127, 255, cv2.THRESH_OTSU)
         self.img = img
         
     def isSafe(self, pts, dilate_radius:int = 1):
@@ -66,7 +84,6 @@ class ObstacleCollision():
         """
         h, w = self.img.shape[:2]
         mask = np.zeros((h, w), dtype=np.uint8)
-        
         for i in range(len(pts) - 1):
             pt1 = self.boundingPoint(pts[i])
             pt1 = int(pt1[1]), int(pt1[0])
@@ -74,14 +91,17 @@ class ObstacleCollision():
             pt2 = int(pt2[1]), int(pt2[0])
             
             cv2.line(mask, pt1, pt2, 255, dilate_radius, cv2.LINE_AA)
-
+            cv2.line(self.img, pt1, pt2, 127, 10, cv2.LINE_AA) 
         collision_roi = cv2.bitwise_and(self.img, mask)
         pixel_count = cv2.countNonZero(collision_roi)
+        cv2.namedWindow("img1", 0)
+        cv2.imshow("img1", self.img)
+        cv2.waitKey(0)
         if pixel_count > 0:
             return False
         else:
             return True
-        
+         
     def boundingPoint(self, pt):
         if pt[0] < 0:
             pt[0] = 0
@@ -95,14 +115,33 @@ class ObstacleCollision():
         
         return pt 
     
-    def __call__(self, pts, dilate_radius:int = 1):
-        return self.isSafe(pts, dilate_radius)
+    def __call__(self, model, states, theta_array, line, dilate_radius:int = 1):
+        self.results = []
+        print(states)
+        for i in range(len(states) - 1):
+            if theta_array[i] is None:
+                continue
+            theta = theta_array[i]
+            v = 1
+            dt = 1
+            w = model.calW(1, theta)
+            toward = line[i].theta
+            initial_point = line[i].percentage2point(states[i][0])
+            target_point = line[i + 1].percentage2point(states[i][1])
+            print(initial_point, target_point, model.calEndXY(initial_point, theta, line[i].theta, line[i+1].theta))
+            print("====================")
+            pt = initial_point
+            pts = [pt]
+            while np.linalg.norm(pt - target_point) > 10:
+                pt = model.calXY(pt, toward, v, dt, w)
+                toward = model.calToward(toward, w, dt)
+                pts.append(pt)
+            self.results.append(self.isSafe(pts, dilate_radius))  
+        print(self.results)
+        return self.results
+        
 
-def constModelConstrain(pt1, a1, b1, c1, d, initToward, finalToward):
-    model = motion.ConstMotion(d)
-    theta = model.findTheta(pt1, a1, b1, c1,  d, initToward, finalToward)
-    
-    if theta is None:
-        return False
-    
-    return True
+def constModelConstrain(theta_array):
+    modelConstrain = [True if theta is not None else False for theta in theta_array]
+
+    return modelConstrain

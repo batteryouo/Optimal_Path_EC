@@ -11,12 +11,16 @@ class Individual():
 
     uniprng = None
     normprng = None
-    objective_func = None
-    constrain_func = None
-
-    def __init__(self, minMutRate = 1e-100, maxMutRate = 1, learningRate = 1e-1):
-
-        self.objectives = objective.MultiObjective(objectives_func_list=self.__class__.objective_func, **self.states)
+    def __init__(self, objective_func = None, constrain_func = None, minMutRate = 1e-100, maxMutRate = 1, learningRate = 1e-1):
+        self.objective_func = objective_func
+        
+        self.objective_func = objective_func
+        self.constrain_func = constrain_func
+        self.minMuteRate = minMutRate
+        self.maxMuteRate = maxMutRate
+        self.learningRate = learningRate
+        
+        self.objectives = objective.MultiObjective(objectives_func_list=self.objective_func, **self.states)
         if self.constrain_func is not None:
             self.constrains = func.MultiConstrain(self.constrain_func, self.states)
         else:
@@ -25,6 +29,9 @@ class Individual():
         self.numObj = len(self.objectives)
         self.frontRank = None
         self.crowdDist = None
+
+        print(self.objectives.values)
+        print(self.constrains.results)
         
     def dominates(self, other, compare_list = ["max", "max"]):
 
@@ -32,8 +39,8 @@ class Individual():
             return 0
         
         if self.constrains is not None and other.constrains is not None:
-            selfConstrain = np.sum(self.constrains.results)
-            otherConstrain = np.sum(other.constrains.results)
+            selfConstrain = np.sum(self.constrains.results == False)
+            otherConstrain = np.sum(other.constrains.results == False)
             
             if selfConstrain > otherConstrain:
                 return 1
@@ -93,52 +100,49 @@ class Individual():
         return distance
 
 class PathIndividual(Individual):
-    def __init__(self, img, pts, model = None):
+    def __init__(self, img, pts, model):
         states = []
+        self.theta_array = []
         self.img = img
         self.pts = pts
         self.pathLine = []
-
-        model = motion.ConstMotion(1)      
+        self.model = model
 
         for i in range(len(pts) - 1):
             line = shape.Line(pts[i], pts[i + 1])
             self.pathLine.append(line)
         self.pathLine.append(shape.Line(pts[-1], pts[0]))
 
-        lastPointOut = 0
-        
-        for _ in range(len(self.pts) - 2):
+        lastPointOut = 0  
+        for i in range(len(self.pts) - 1):
             pointIn = self.uniprng.uniform(lastPointOut, 1)
             theta = model.findTheta(self.pathLine[i].percentage2point(pointIn), self.pathLine[i + 1].a, self.pathLine[i + 1].b, self.pathLine[i + 1].c,
                                 self.pathLine[i].theta, self.pathLine[i + 1].theta)
             if theta is not None:
-                lastPointOut = model.calEndXY(self.pathLine[0].percentage2point(pointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
-                lastPointOut = np.linalg.norm(lastPointOut - pts[1]) / self.pathLine[1].length
+                lastPointOut = model.calEndXY(self.pathLine[i].percentage2point(pointIn), theta, self.pathLine[i].theta, self.pathLine[i+1].theta)
+                lastPointOut = np.linalg.norm(lastPointOut - pts[i+1]) / self.pathLine[i+1].length
             else:
                 lastPointOut = 0
                 
             if lastPointOut < 0 or lastPointOut >= 1:
                 lastPointOut = 0
+                theta = None
             states.append([pointIn, lastPointOut])
+            self.theta_array.append(theta)
         pointIn = self.uniprng.uniform(lastPointOut, 1)
-        theta = model.findTheta(self.pathLine[i].percentage2point(pointIn), self.pathLine[i + 1].a, self.pathLine[i + 1].b, self.pathLine[i + 1].c,
-                            self.pathLine[i].theta, self.pathLine[i + 1].theta)
+        theta = model.findTheta(self.pathLine[-1].percentage2point(pointIn), self.pathLine[0].a, self.pathLine[0].b, self.pathLine[0].c,
+                            self.pathLine[-1].theta, self.pathLine[0].theta)
         if theta is not None:
-            lastPointOut = model.calEndXY(self.pathLine[0].percentage2point(pointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
-            lastPointOut = np.linalg.norm(lastPointOut - pts[1]) / self.pathLine[1].length
+            lastPointOut = model.calEndXY(self.pathLine[-1].percentage2point(pointIn), theta, self.pathLine[0].theta, self.pathLine[1].theta)
+            lastPointOut = np.linalg.norm(lastPointOut - pts[0]) / self.pathLine[0].length
         else:
-            lastPointOut = 0
-        
+            lastPointOut = 0 
         if lastPointOut > states[0][0] or lastPointOut < 0 or lastPointOut >= 1:
             lastPointOut = 0
+            theta = None
         states.append([pointIn, lastPointOut])
-        print(states)
-        for i in range(len(pts) - 1):
-            theta = model.findTheta(self.pathLine[i].percentage2point(states[i][0]), self.pathLine[i+1].a, self.pathLine[i+1].b, self.pathLine[i+1].c,
-                            self.pathLine[i].theta, self.pathLine[i + 1].theta)
-            print(theta)
-                                
-        
-        self.states = {"states": states}
-        super().__init__()
+        self.theta_array.append(theta)
+
+        self.states = {"states": states, "theta_array": self.theta_array, "line": self.pathLine, "dilate_radius": self.model.d, "model": self.model}
+        obstacleConstrain = func.constrain.ObstacleCollision(self.img)
+        super().__init__(objective_func=[func.fitness.smoothCurveFitness, func.fitness.straightLineFitness], constrain_func=[obstacleConstrain, func.constrain.constModelConstrain])

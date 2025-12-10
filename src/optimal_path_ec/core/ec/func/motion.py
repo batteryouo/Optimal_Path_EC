@@ -12,12 +12,12 @@ class ConstMotion():
     
     @classmethod
     def calToward(cls, initToward, w, timeStep):
-        return initToward + w*(timeStep[1] - timeStep[0])
+        return initToward + w*timeStep
 
     @classmethod
     def calXY(cls, initPos, initToward, V, timeStep , w):
-        x = initPos[0] + V/w(np.sin(initToward + w*timeStep) - np.sin(initToward + w*0))
-        y = initPos[1] - V/w(np.cos(initToward + w*timeStep) - np.cos(initToward + w*0))
+        x = initPos[0] + V/w*(np.sin(initToward + w*timeStep) - np.sin(initToward + w*0))
+        y = initPos[1] - V/w*(np.cos(initToward + w*timeStep) - np.cos(initToward + w*0))
 
         return np.array([x, y])
     

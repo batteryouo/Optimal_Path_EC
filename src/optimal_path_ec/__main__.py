@@ -14,8 +14,8 @@ def main():
     cv2.namedWindow("canvas", 0)
     cv2.imshow("canvas", color_map)
     
-    core.ec.PathIndividual(img, pts)
+    model = core.ec.ConstMotion(10)
+    core.ec.PathIndividual(img, pts, model)
     cv2.waitKey(0)
-
 if __name__ == "__main__":
     main()
