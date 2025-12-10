@@ -15,16 +15,7 @@ normprng = np.random.default_rng(456)
 
 def printStats(pop,gen):
     print('Generation:',gen)
-    avgDamage=0
-    avgCost=0
-    costval,maxval=pop[0].objectives
-    muteRate=pop[0].muteRate
     for ind in pop:
-        avgDamage+=ind.objectives[1]
-        avgCost+=ind.objectives[0]
-        if ind.objectives[1] > maxval:
-            costval,maxval=ind.objectives
-            muteRate=ind.muteRate
         print(ind, f"frontRank: {ind.frontRank}", f"line: {ind.objectives[1]}", 
               f"curve: {ind.objectives[0]}, constrain: {ind.constrains.results}")
 
