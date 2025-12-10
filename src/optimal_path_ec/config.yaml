@@ -1,6 +1,0 @@
-map:
-    frameSize: (500, 500)
-    borderWidth: 10
-
-model:
-    d: 10

@@ -5,13 +5,16 @@ import numpy as np
 
 import core
 import map_generator
-# from utils import readYaml
+from utils import readJson
 
-# cfg = readYaml(os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml"))
-# map_cfg = cfg["map"]
+cfg = readJson(os.path.join(os.path.dirname(os.path.abspath(__file__)), "cfg", "config.json"))
+map_cfg = cfg["map"]
+random_seed_cfg = cfg["random_seed"]
+model_cfg = cfg["model"]
+ec_cfg = cfg["ec"]
 
-uniprng = np.random.default_rng(123)
-normprng = np.random.default_rng(456)
+uniprng = np.random.default_rng(random_seed_cfg["uniform"])
+normprng = np.random.default_rng(random_seed_cfg["norm"])
 
 def printStats(pop,gen):
     print('Generation:',gen)
@@ -22,23 +25,23 @@ def printStats(pop,gen):
     print('')
 
 def main():
-    mapGenerator = map_generator.Generator(333)
-    mapGenerator.createFramework((500, 500), 10)
+    mapGenerator = map_generator.Generator(random_seed_cfg["map_seed"])
+    mapGenerator.createFramework(map_cfg["frameSize"], map_cfg["borderWidth"])
     pts = None
     img = None
     while pts is None:
-        pts, img = mapGenerator.generate(20, 100, 400, 30, 20)
+        pts, img = mapGenerator.generate(map_cfg["max_points"], map_cfg["min_dist"], map_cfg["max_ranges"], map_cfg["min_angle_degrees"], map_cfg["expand_width"])
     color_map = mapGenerator.drawLineAndPoints(img, pts)
     cv2.namedWindow("canvas", 0)
     cv2.imshow("canvas", color_map)
     
-    model = core.ec.ConstMotion(10)
+    model = core.ec.ConstMotion(model_cfg["d"])
     core.ec.PathIndividual(img, pts, model, uniprng, normprng)
     cv2.waitKey(0)
-    population=core.ec.PathPopulation(img ,pts, model, 30, uniprng, normprng)
-    core.ec.PathPopulation.crossoverFraction = 1.0
+    population=core.ec.PathPopulation(img ,pts, model, ec_cfg["population_size"], uniprng, normprng)
+    core.ec.PathPopulation.crossoverFraction = ec_cfg["crossoverFraction"]
     population.evaluateObjectives()
-    for i in range(30):
+    for i in range(ec_cfg["generation"]):
         
         offspring1 = population.copy()
         offspring2 = population.copy()
@@ -62,7 +65,7 @@ def main():
 
         population.evaluateObjectives()
         population.updateRanking()
-        population.MOTruncation(30)
+        population.MOTruncation(ec_cfg["population_size"])
         printStats(population,i+1)
 
 if __name__ == "__main__":

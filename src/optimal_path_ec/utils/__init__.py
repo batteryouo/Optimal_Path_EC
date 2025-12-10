@@ -1,1 +1,3 @@
-from .config import readYaml
+from .config import *
+
+__all__ = ["config"]
