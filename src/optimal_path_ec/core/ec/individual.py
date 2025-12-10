@@ -116,58 +116,131 @@ class PathIndividual(Individual):
         self.pathLine.append(shape.Line(pts[-1], pts[0]))
 
         lastPointOut = 0  
-        for i in range(len(self.pts) - 1):
-            pointIn = self.uniprng.uniform(lastPointOut, 1)
-            theta = model.findTheta(self.pathLine[i].percentage2point(pointIn), self.pathLine[i + 1].a, self.pathLine[i + 1].b, self.pathLine[i + 1].c,
-                                self.pathLine[i].theta, self.pathLine[i + 1].theta)
-            if theta is not None:
-                lastPointOut = model.calEndXY(self.pathLine[i].percentage2point(pointIn), theta, self.pathLine[i].theta, self.pathLine[i+1].theta)
-                lastPointOut = np.linalg.norm(lastPointOut - pts[i+1]) / self.pathLine[i+1].length
+        for i in range(len(self.pts)):
+            ind = i
+            if ind >= len(self.pts)-1:
+                ind = -1
+                theta, pointIn, lastPointOut = self.generateSingleState(lastPointOut, self.pathLine[ind], self.pathLine[ind+1], pts[ind+1], states[ind+1][0])
             else:
-                lastPointOut = 0
-                
-            if lastPointOut < 0 or lastPointOut >= 1:
-                lastPointOut = 0
-                theta = None
+                theta, pointIn, lastPointOut = self.generateSingleState(lastPointOut, self.pathLine[ind], self.pathLine[ind+1], pts[ind+1])
             states.append([pointIn, lastPointOut])
             self.theta_array.append(theta)
-        pointIn = self.uniprng.uniform(lastPointOut, 1)
-        theta = model.findTheta(self.pathLine[-1].percentage2point(pointIn), self.pathLine[0].a, self.pathLine[0].b, self.pathLine[0].c,
-                            self.pathLine[-1].theta, self.pathLine[0].theta)
-        if theta is not None:
-            lastPointOut = model.calEndXY(self.pathLine[-1].percentage2point(pointIn), theta, self.pathLine[-1].theta, self.pathLine[0].theta)
-            lastPointOut = np.linalg.norm(lastPointOut - pts[0]) / self.pathLine[0].length
-        else:
-            lastPointOut = 0 
-        if lastPointOut > states[0][0] or lastPointOut < 0 or lastPointOut >= 1:
-            lastPointOut = 0
-            theta = None
-        states.append([pointIn, lastPointOut])
-        self.theta_array.append(theta)
 
         self.states = {"states": states, "theta_array": self.theta_array, "line": self.pathLine, "dilate_radius": self.model.d, "model": self.model}
         obstacleConstrain = func.constrain.ObstacleCollision(self.img)
         super().__init__(objective_func=[func.fitness.smoothCurveFitness, func.fitness.straightLineFitness], constrain_func=[obstacleConstrain, func.constrain.constModelConstrain])
-    def crossover(self, other):
-        self.constrains.results
-        other.constrains.results
+    def floatCrossover(self, other):
+        selfStates = self.states["statets"]
+        otherStates = other.states["states"]
+        for i in range(-1, len(selfStates)-2):
+            alpha = self.uniprng.uniform(0, 1)
+            selfPointIn = alpha*selfStates[i][0] + (1-alpha)*otherStates[i][0]
+            otherPointIn = (1-alpha)*selfStates[i][0] + alpha*otherStates[i][0]
+            selfTheta = self.model.findTheta(self.pathLine[i].percentage2point(selfPointIn), self.pathLine[i+1].a, self.pathLine[i+1].b, self.pathLine[i+1].c
+                                             , self.pathLine[i].theta, self.pathLine[i+1].theta)
+            otherTheta = other.model.findTheta(other.pathLine[i].percentage2point(otherPointIn), other.pathLine[i+1].a, other.pathLine[i+1].b, other.pathLine[i+1].c
+                                             , other.pathLine[i].theta, other.pathLine[i+1].theta)
+            if selfTheta is not None:
+                lastPointOut = self.model.calEndXY(self.pathLine[i].percentage2point(selfPointIn), selfTheta, self.pathLine[i].theta, self.pathLine[i+1].theta)
+                lastPointOut = np.linalg.norm(lastPointOut - self.pts[i]) / self.pathLine[i+1].length
+            else:
+                lastPointOut = 0
+            if not self.generateCheck(lastPointOut, selfStates[i+1][0]):
+                lastPointOut = 0
+                selfTheta = None
+            else:
+                self.states["state"][i] = [selfPointIn, lastPointOut]
+                self.states["theta_array"][i] = selfTheta
+            
+             
+            if otherTheta is not None:
+                lastPointOut = other.model.calEndXY(other.pathLine[i].percentage2point(otherPointIn), otherTheta, other.pathLine[i].theta, other.pathLine[i+1].theta)
+                lastPointOut = np.linalg.norm(lastPointOut - other.pts[i]) / other.pathLine[i+1].length
+            else:
+                lastPointOut = 0
+            if not other.generateCheck(lastPointOut, otherStates[i+1][0]):
+                lastPointOut = 0
+                otherTheta = None
+            else:
+                other.states["state"][i] = [otherPointIn, lastPointOut]
+                other.states["theta_array"][i] = otherTheta                 
+        self.clear()
+        other.clear() 
+        
+    def doublePointCrossover(self, other):
+        selfStates = self.states["states"]
+        otherStates = other.states["states"]
+        assert len(selfStates) == len(otherStates), "Parents must be the same length."
+        n = len(selfStates)
+        if n < 3:
+            p1 = 0
+            p2 = 1
+        else:
+            p1, p2 = sorted(self.uniprng.sample( range( 1, n ), 2))
+        tmp = selfStates[:p1] + otherStates[p1:p2] + selfStates[p2:]
+        otherStates = otherStates[:p1] + selfStates[p1:p2] + otherStates[p2:]
+        selfStates = tmp
+        
+        self.states["states"] = selfStates
+        other.states["states"] = otherStates
+        self.spliceCheck(p1)
+        self.spliceCheck(p2) 
+        other.spliceCheck(p1)
+        other.spliceCheck(p2) 
+        self.clear()
+        other.clear() 
+    
     def mutate(self):
         self.mutateMuteRate() #update mutation rate
-
-        for i in range(len(self.states)):
-            pass
-        self.objectives=None
+        states = self.states["states"]
+        for i in range(len(states)):
+            ind = i
+            if ind >= len(states) - 1:
+                ind = -1
+            if self.uniprng.uniform(0, 1) < self.muteRate:
+                theta, pointIn, lastPointOut = self.generateSingleState(states[ind-1][1], self.pathLine[ind], self.pathLine[ind+1], self.pts[ind+1], states[ind+1][0])
+                self.states["states"][i] = [pointIn, lastPointOut]
+                self.theta_array[i] = theta
         
-    def generateSingleState(self, lastPointOut, currentLine, nextLine, endOfCurLine):
+        self.states = {"states": states, "theta_array": self.theta_array, "line": self.pathLine, "dilate_radius": self.model.d, "model": self.model} 
+        self.clear()
+        
+    def generateSingleState(self, lastPointOut, currentLine, nextLine, endOfCurLine, nextTurnInPoint = None):
         pointIn = self.uniprng.uniform(lastPointOut, 1)
         theta = self.model.findTheta(currentLine.percentage2point(pointIn), nextLine.a, nextLine.b, nextLine.c, currentLine.theta, nextLine.theta)
         if theta is not None:
-            lastPointOut = self.model.calEndXY(currentLine.percentage2point(pointIn), theta, currentLine.theta, currentLine.theta)
+            lastPointOut = self.model.calEndXY(currentLine.percentage2point(pointIn), theta, currentLine.theta, nextLine.theta)
             lastPointOut = np.linalg.norm(lastPointOut - endOfCurLine) / nextLine.length
         else:
             lastPointOut = 0
             
-        if lastPointOut < 0 or lastPointOut >= 1:
+        if not self.generateCheck(lastPointOut, nextTurnInPoint):
             lastPointOut = 0
-            theta = None
-        return theta, lastPointOut
+            theta = None 
+        return theta, pointIn, lastPointOut
+    
+    def generateCheck(self, lastPointOut, nextTurnInPoint = None):    
+        if lastPointOut <= 0 or lastPointOut >= 1:
+            return False
+        if nextTurnInPoint is not None:
+            if lastPointOut > nextTurnInPoint:
+                return False
+        return True
+    
+    def spliceCheck(self, p):
+        states = self.states["states"]
+        if p == len(states) - 1:
+            p = -1
+        if states[p][0] < states[p-1][1]:
+            self.states["states"][p] = [0, 0]
+            self.states["theta_array"][p] = None
+            return False
+        if states[p][1] > states[p+1][0]:
+            self.states["states"][p] = [0, 0]
+            self.states["theta_array"][p] = None
+            return False
+        return True
+    
+    def clear(self):
+        self.objectives.values=None
+        self.constrains.results = None 

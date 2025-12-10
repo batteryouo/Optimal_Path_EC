@@ -91,9 +91,12 @@ class ObstacleCollision():
             pt2 = int(pt2[1]), int(pt2[0])
             
             cv2.line(mask, pt1, pt2, 255, dilate_radius, cv2.LINE_AA)
+            cv2.line(self.img, pt1, pt2, 125, dilate_radius, cv2.LINE_AA)
         collision_roi = cv2.bitwise_and(self.img, mask)
         pixel_count = cv2.countNonZero(collision_roi)
-
+        cv2.namedWindow("i", 0)
+        cv2.imshow("i", self.img)
+        cv2.waitKey(0)
         if pixel_count > 0:
             return False
         else:
@@ -120,6 +123,7 @@ class ObstacleCollision():
             if i >= len(states) - 1:
                 i = -1
             if theta_array[i] is None:
+                self.results.append(False)
                 continue
             theta = theta_array[i]
             w = model.calW(1, theta)
