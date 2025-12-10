@@ -30,7 +30,7 @@ class Individual():
         self.frontRank = None
         self.crowdDist = None
         
-    def mutateMutRate(self):
+    def mutateMuteRate(self):
         self.muteRate=self.muteRate*math.exp(self.learningRate*self.uniprng.normalvariate(0,1))
         if self.muteRate < self.minMuteRate: self.muteRate=self.minMuteRate
         if self.muteRate > self.maxMuteRate: self.muteRate=self.maxMuteRate
@@ -152,15 +152,22 @@ class PathIndividual(Individual):
         self.constrains.results
         other.constrains.results
     def mutate(self):
-        self.mutateMutRate() #update mutation rate
-        
-        '''
-        It's your choice to use any mutate function you learned from our course. 
-        '''
+        self.mutateMuteRate() #update mutation rate
 
-        for i in range(len(self.state)):
-            
-            # if self.uniprng.random() < self.mutRate:
-            self.state[i] = self.state[i] + self.mutRate*self.normprng.normalvariate(0,1)
-            self.state[i] = int( self.__constrain( round( self.state[i] ), 0, self.nSpells-1 ) )
+        for i in range(len(self.states)):
+            pass
         self.objectives=None
+        
+    def generateSingleState(self, lastPointOut, currentLine, nextLine, endOfCurLine):
+        pointIn = self.uniprng.uniform(lastPointOut, 1)
+        theta = self.model.findTheta(currentLine.percentage2point(pointIn), nextLine.a, nextLine.b, nextLine.c, currentLine.theta, nextLine.theta)
+        if theta is not None:
+            lastPointOut = self.model.calEndXY(currentLine.percentage2point(pointIn), theta, currentLine.theta, currentLine.theta)
+            lastPointOut = np.linalg.norm(lastPointOut - endOfCurLine) / nextLine.length
+        else:
+            lastPointOut = 0
+            
+        if lastPointOut < 0 or lastPointOut >= 1:
+            lastPointOut = 0
+            theta = None
+        return theta, lastPointOut
