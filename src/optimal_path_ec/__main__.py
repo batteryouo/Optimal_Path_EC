@@ -5,6 +5,7 @@ import numpy as np
 
 import core
 import map_generator
+import simulation
 from utils import readJson
 
 cfg = readJson(os.path.join(os.path.dirname(os.path.abspath(__file__)), "cfg", "config.json"))
@@ -34,13 +35,12 @@ def main():
     color_map = mapGenerator.drawLineAndPoints(img, pts)
     cv2.namedWindow("canvas", 0)
     cv2.imshow("canvas", color_map)
-    
-    model = core.ec.ConstMotion(model_cfg["d"])
-    core.ec.PathIndividual(img, pts, model, uniprng, normprng)
     cv2.waitKey(0)
+    model = core.ec.ConstMotion(model_cfg["d"])
     population=core.ec.PathPopulation(img ,pts, model, ec_cfg["population_size"], uniprng, normprng)
     core.ec.PathPopulation.crossoverFraction = ec_cfg["crossoverFraction"]
     population.evaluateObjectives()
+    
     for i in range(ec_cfg["generation"]):
         
         offspring1 = population.copy()
@@ -67,6 +67,12 @@ def main():
         population.updateRanking()
         population.MOTruncation(ec_cfg["population_size"])
         printStats(population,i+1)
-
+    winner:core.ec.PathIndividual | None = None
+    for ind in population:
+        if ind.frontRank == 0:
+            winner = ind
+            break
+    sim = simulation.Simulation(model, winner.states["states"], winner.states["theta_array"], winner.pathLine, color_map)
+    sim.run()
 if __name__ == "__main__":
     main()

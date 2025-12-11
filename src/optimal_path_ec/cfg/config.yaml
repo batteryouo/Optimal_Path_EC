@@ -16,5 +16,5 @@ model:
 
 ec:
     population: 30
-    generation: 30
+    generation: 15
     crossoverFraction: 1.0

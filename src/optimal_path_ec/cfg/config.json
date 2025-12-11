@@ -18,7 +18,7 @@
   },
   "ec": {
     "population_size": 30,
-    "generation": 30,
+    "generation": 10,
     "crossoverFraction": 1.0
   }
 }
