@@ -56,10 +56,11 @@ class Simulation():
     def draw_robot(self, x, y, angle_radians, radius=3, color=(0, 255, 0), thickness=2):
 
         center = (int(x), int(y))
-        img = cv2.circle(self.map, center, radius, color, thickness)
+        img = self.map.copy()
+        img = cv2.circle(img, center, radius, color, thickness)
 
         end_x = x + radius * math.cos(angle_radians)
         end_y = y + radius * math.sin(angle_radians)
         end_point = (int(end_x), int(end_y))
 
-        return cv2.arrowedLine(img, center, end_point, (0, 0, 255), thickness, tipLength=1.0)
+        return cv2.arrowedLine(img, center, end_point, (0, 0, 255), 5, tipLength=0.3)

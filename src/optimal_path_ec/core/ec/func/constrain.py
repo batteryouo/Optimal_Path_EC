@@ -132,7 +132,7 @@ class ObstacleCollision():
             target_point = line[i + 1].percentage2point(states[i][1])
             pt = initial_point
             pts = [pt]
-            while np.linalg.norm(pt - target_point) > 5:
+            while np.linalg.norm(pt - target_point) > 1:
                 pt = model.calXY(pt, toward, v, dt, w)
                 toward = model.calToward(toward, w, dt)
                 pts.append(pt)

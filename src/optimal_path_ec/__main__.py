@@ -73,6 +73,7 @@ def main():
             winner = ind
             break
     sim = simulation.Simulation(model, winner.states["states"], winner.states["theta_array"], winner.pathLine, color_map)
+    print("press `esc` to quit")
     sim.run()
 if __name__ == "__main__":
     main()
